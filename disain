@@ -1,0 +1,113 @@
+import pygame
+from enum import Enum
+
+
+# ====================== КОНСТАНТЫ И НАСТРОЙКИ ======================
+class GameSettings:
+    SCREEN_WIDTH = 800
+    SCREEN_HEIGHT = 600
+    TILE_SIZE = 64
+    FPS = 60
+    SCROLL_SPEED = 3
+    PLAYER_SPEED = 5
+
+
+class Colors:
+    SKY_BLUE = (135, 206, 235)
+    GRASS_GREEN = (100, 200, 100)
+    ROAD_GRAY = (50, 50, 50)
+    SIDEWALK = (200, 200, 200)
+    RED = (255, 0, 0)
+    GOLD = (255, 215, 0)
+    WHITE = (255, 255, 255)
+    BLACK = (0, 0, 0)
+    CAR_COLORS = [(200, 0, 0), (0, 0, 200), (0, 200, 0), (200, 200, 0)]
+
+
+class ObjectType(Enum):
+    CAR = 1
+    TREE = 2
+    BUSH = 3
+    LAMP = 4
+    COIN = 5
+
+
+# ====================== ГРАФИКА И АССЕТЫ ======================
+class PixelArt:
+    @staticmethod
+    def draw_cat(surface, x, y):
+        # Тело кота (16x16)
+        pygame.draw.rect(surface, (255, 165, 0), (x, y, 16, 16))
+        # Глаза
+        pygame.draw.rect(surface, Colors.BLACK, (x + 4, y + 4, 2, 2))
+        pygame.draw.rect(surface, Colors.BLACK, (x + 10, y + 4, 2, 2))
+        # Уши
+        pygame.draw.polygon(surface, (255, 165, 0), [(x, y), (x + 4, y - 4), (x + 8, y)])
+        pygame.draw.polygon(surface, (255, 165, 0), [(x + 8, y), (x + 12, y - 4), (x + 16, y)])
+
+    @staticmethod
+    def draw_car(surface, x, y, color):
+        # Кузов (24x12)
+        pygame.draw.rect(surface, color, (x, y + 2, 24, 12))
+        # Окна
+        pygame.draw.rect(surface, (200, 200, 255), (x + 2, y + 4, 8, 4))
+        pygame.draw.rect(surface, (200, 200, 255), (x + 14, y + 4, 8, 4))
+        # Колёса
+        pygame.draw.rect(surface, Colors.BLACK, (x + 4, y + 12, 4, 4))
+        pygame.draw.rect(surface, Colors.BLACK, (x + 16, y + 12, 4, 4))
+
+    @staticmethod
+    def draw_tree(surface, x, y):
+        # Ствол
+        pygame.draw.rect(surface, (101, 67, 33), (x + 12, y + 16, 8, 16))
+        # Крона
+        pygame.draw.circle(surface, (0, 80, 0), (x + 16, y + 8), 12)
+
+    @staticmethod
+    def draw_coin(surface, x, y):
+        pygame.draw.circle(surface, Colors.GOLD, (x + 4, y + 4), 4)
+        pygame.draw.rect(surface, (200, 150, 0), (x + 2, y + 3, 4, 2))
+
+    @staticmethod
+    def draw_road(surface, y_offset):
+        # Основная дорожка
+        pygame.draw.rect(surface, Colors.SIDEWALK,
+                         (0, y_offset, GameSettings.SCREEN_WIDTH, GameSettings.TILE_SIZE))
+
+        # Разметка
+        for x in range(0, GameSettings.SCREEN_WIDTH, 40):
+            pygame.draw.rect(surface, Colors.WHITE,
+                             (x, y_offset + GameSettings.TILE_SIZE // 2 - 1, 20, 2))
+
+
+# ====================== ИГРОВЫЕ ОБЪЕКТЫ ======================
+class GameObject:
+    def __init__(self, x, y, obj_type, speed=0):
+        self.x = x
+        self.y = y
+        self.type = obj_type
+        self.speed = speed
+        self.width = 32
+        self.height = 32
+
+        if obj_type == ObjectType.CAR:
+            self.width = 24
+            self.height = 12
+            self.color = random.choice(Colors.CAR_COLORS)
+        elif obj_type == ObjectType.TREE:
+            self.width = 32
+            self.height = 32
+        elif obj_type == ObjectType.COIN:
+            self.width = 8
+            self.height = 8
+
+    def draw(self, surface):
+        if self.type == ObjectType.CAR:
+            PixelArt.draw_car(surface, self.x, self.y, self.color)
+        elif self.type == ObjectType.TREE:
+            PixelArt.draw_tree(surface, self.x, self.y)
+        elif self.type == ObjectType.COIN:
+            PixelArt.draw_coin(surface, self.x, self.y)
+
+    def get_rect(self):
+        return pygame.Rect(self.x, self.y, self.width, self.height)
