@@ -31,41 +31,35 @@ class ObjectType(Enum):
     LAMP  = 4
     COIN  = 5
     HOUSE = 6
+    PALM  = 7
 
 # ====================== ГРАФИКА И АССЕТЫ ======================
 class PixelArt:
     @staticmethod
     def draw_cat(surface, x, y):
-        # Более детализированный векторный кот (32x32)
         body = pygame.Rect(x, y, 24, 16)
-        pygame.draw.ellipse(surface, (255,165,0), body)               # туловище
+        pygame.draw.ellipse(surface, (255,165,0), body)
         head = pygame.Rect(x+12, y-8, 16, 16)
-        pygame.draw.ellipse(surface, (255,165,0), head)               # голова
-        # Глаза
+        pygame.draw.ellipse(surface, (255,165,0), head)
         pygame.draw.circle(surface, Colors.BLACK, (x+18, y), 2)
         pygame.draw.circle(surface, Colors.BLACK, (x+24, y), 2)
-        # Уши
         pygame.draw.polygon(surface, (255,165,0), [(x+12, y-8),(x+14,y-16),(x+18,y-8)])
         pygame.draw.polygon(surface, (255,165,0), [(x+24, y-8),(x+26,y-16),(x+30,y-8)])
-        # Хвост
         pygame.draw.lines(surface, (255,165,0), False, [(x, y+8),(x-8,y),(x-4,y-4)], 4)
 
     @staticmethod
     def draw_car(surface, x, y, color):
-        # Кузов (32x16)
         body = pygame.Rect(x, y, 32, 16)
         pygame.draw.rect(surface, color, body)
-        # Окна
         pygame.draw.rect(surface, (200,200,255), (x+4, y+4, 10, 6))
         pygame.draw.rect(surface, (200,200,255), (x+18, y+4, 10, 6))
-        # Колёса
         pygame.draw.circle(surface, Colors.BLACK, (x+8, y+18), 6)
         pygame.draw.circle(surface, Colors.BLACK, (x+24, y+18), 6)
 
     @staticmethod
     def draw_tree(surface, x, y):
-        pygame.draw.rect(surface, (101,67,33), (x+12, y+16, 8, 16))    # ствол
-        pygame.draw.circle(surface, (0,80,0), (x+16, y+8), 12)        # крона
+        pygame.draw.rect(surface, (101,67,33), (x+12, y+16, 8, 16))
+        pygame.draw.circle(surface, (0,80,0), (x+16, y+8), 12)
 
     @staticmethod
     def draw_coin(surface, x, y):
@@ -74,30 +68,50 @@ class PixelArt:
 
     @staticmethod
     def draw_house(surface, x, y):
-        # Каркас дома (40x30)
         pygame.draw.rect(surface, (178,34,34), (x, y, 40, 30))
-        # Крыша
-        pygame.draw.polygon(surface, (139,69,19),
-                            [(x, y), (x+20, y-20), (x+40, y)])
-        # Окна
+        pygame.draw.polygon(surface, (139,69,19), [(x, y), (x+20, y-20), (x+40, y)])
         pygame.draw.rect(surface, (200,200,255), (x+8, y+8, 8, 8))
         pygame.draw.rect(surface, (200,200,255), (x+24, y+8, 8, 8))
 
     @staticmethod
-    def draw_road(surface, y_offset):
-        pygame.draw.rect(surface, Colors.SIDEWALK,
-                         (0, y_offset, GameSettings.SCREEN_WIDTH, GameSettings.TILE_SIZE))
-        for x in range(0, GameSettings.SCREEN_WIDTH, 40):
-            pygame.draw.rect(surface, Colors.WHITE,
-                             (x, y_offset + GameSettings.TILE_SIZE//2 - 1, 20, 2))
+    def draw_palm(surface, x, y):
+        pygame.draw.rect(surface, (139,69,19), (x+6, y+20, 4, 20))
+        for dx, dy in [(-10,-5),(0,-15),(10,-5),(5,5),(-5,5)]:
+            pygame.draw.ellipse(surface, (0,150,0), (x+dx, y+dy, 20, 10))
+
+    @staticmethod
+    def draw_shore(surface):
+        H, W = GameSettings.SCREEN_HEIGHT, GameSettings.SCREEN_WIDTH
+        left_edge  = W/2 - (W*0.8)/2
+        right_edge = W/2 + (W*0.8)/2
+        pygame.draw.rect(surface, (240,230,140), (0, H/4, left_edge, H*3/4))
+        pygame.draw.rect(surface, (240,230,140), (right_edge, H/4, W-right_edge, H*3/4))
+        pygame.draw.rect(surface, (0,180,255), (0, 0, left_edge, H/4))
+        pygame.draw.rect(surface, (0,180,255), (right_edge, 0, W-right_edge, H/4))
+
+    @staticmethod
+    def draw_perspective_road(surface):
+        H, W = GameSettings.SCREEN_HEIGHT, GameSettings.SCREEN_WIDTH
+        top_y = H // 4
+        bot_y = H
+        top_w = W * 0.2
+        bot_w = W * 0.8
+        left_bot  = (W/2 - bot_w/2, bot_y)
+        right_bot = (W/2 + bot_w/2, bot_y)
+        left_top  = (W/2 - top_w/2, top_y)
+        right_top = (W/2 + top_w/2, top_y)
+        pygame.draw.polygon(surface, Colors.ROAD_GRAY, [left_bot, right_bot, right_top, left_top])
+        for i in (1,2,3):
+            t = i/4
+            x0 = left_bot[0] + (right_bot[0]-left_bot[0]) * t
+            x1 = left_top[0] + (right_top[0]-left_top[0]) * t
+            pygame.draw.line(surface, Colors.WHITE, (x0, bot_y), (x1, top_y), 2)
 
 # ====================== ИГРОВЫЕ ОБЪЕКТЫ ======================
 class GameObject:
     def __init__(self, x, y, obj_type, speed=0):
-        self.x = x; self.y = y
-        self.type = obj_type; self.speed = speed
+        self.x = x; self.y = y; self.type = obj_type; self.speed = speed
         self.crashed = False
-
         if obj_type == ObjectType.CAR:
             self.width, self.height = 32, 16
             self.color = random.choice(Colors.CAR_COLORS)
@@ -108,34 +122,25 @@ class GameObject:
         elif obj_type == ObjectType.COIN:
             self.width, self.height = 8, 8
 
-    def update(self):
-        self.y += self.speed
-
+    def update(self): self.y += self.speed
     def draw(self, surface):
-        if self.type == ObjectType.CAR:
-            PixelArt.draw_car(surface, self.x, self.y, self.color)
-        elif self.type == ObjectType.TREE:
-            PixelArt.draw_tree(surface, self.x, self.y)
-        elif self.type == ObjectType.COIN:
-            PixelArt.draw_coin(surface, self.x, self.y)
-        elif self.type == ObjectType.HOUSE:
-            PixelArt.draw_house(surface, self.x, self.y)
+        if self.type == ObjectType.CAR:   PixelArt.draw_car(surface, self.x, self.y, self.color)
+        if self.type == ObjectType.TREE:  PixelArt.draw_tree(surface, self.x, self.y)
+        if self.type == ObjectType.COIN:  PixelArt.draw_coin(surface, self.x, self.y)
+        if self.type == ObjectType.HOUSE: PixelArt.draw_house(surface, self.x, self.y)
 
-    def get_rect(self):
-        return pygame.Rect(self.x, self.y, self.width, self.height)
+    def get_rect(self): return pygame.Rect(self.x, self.y, self.width, self.height)
 
 # ====================== ЭФФЕКТЫ КРЭША ======================
 class CrashEffect:
     def __init__(self, x, y):
         self.x, self.y = x, y
         self.start = pygame.time.get_ticks()
-
     def draw(self, surface):
         elapsed = pygame.time.get_ticks() - self.start
         if elapsed < GameSettings.CRASH_DURATION:
-            # простой всплеск: круг увеличивается
             radius = 20 * (1 - elapsed/GameSettings.CRASH_DURATION)
-            pygame.draw.circle(surface, Colors.RED, (self.x, self.y), int(radius), 3)
+            pygame.draw.circle(surface, Colors.RED, (int(self.x), int(self.y)), int(radius), 3)
             return True
         return False
 
@@ -150,23 +155,20 @@ class Game:
         self.reset_game()
 
     def reset_game(self):
-        self.player_x     = GameSettings.SCREEN_WIDTH//2
-        self.player_y     = GameSettings.SCREEN_HEIGHT-80
-        self.road_offset  = 0
-        self.score        = 0
-        self.level        = 1
-        self.obstacles    = []
-        self.coins        = []
-        self.crossroads   = []
-        self.crashes      = []
-        self.game_active  = True
-        self.last_obs_t   = 0
-        self.last_coin_t  = 0
-        self.last_cr_t    = 0
+        self.player_x    = GameSettings.SCREEN_WIDTH//2
+        self.player_y    = GameSettings.SCREEN_HEIGHT-80
+        self.road_offset = 0
+        self.score       = 0
+        self.level       = 1
+        self.obstacles   = []
+        self.coins       = []
+        self.crashes     = []
+        self.game_active = True
+        self.last_obs_t  = 0
+        self.last_coin_t = 0
 
     def generate_environment(self):
         now = pygame.time.get_ticks()
-        # препятствия: 60% машины, 25% деревья, 15% дома
         if now - self.last_obs_t > random.randint(500,1500):
             r = random.random()
             x = random.randint(50,GameSettings.SCREEN_WIDTH-100)
@@ -177,101 +179,76 @@ class Game:
             else:
                 self.obstacles.append(GameObject(x, -30, ObjectType.HOUSE, random.randint(1,3)))
             self.last_obs_t = now
-
-        # монеты
         if now - self.last_coin_t > random.randint(300,800):
             x = random.randint(50,GameSettings.SCREEN_WIDTH-50)
             self.coins.append(GameObject(x, -10, ObjectType.COIN, random.randint(2,4)))
             self.last_coin_t = now
 
     def update_objects(self):
-        # обновляем и удаляем объекты, а также проверяем столкновения машин между собой
         cars = []
-        for obj in self.obstacles:
+        for obj in self.obstacles[:]:
             obj.update()
-            if obj.type == ObjectType.CAR:
-                cars.append(obj)
-            if obj.y > GameSettings.SCREEN_HEIGHT:
-                self.obstacles.remove(obj)
-
-        # детектируем крэши: пары машин
+            if obj.type == ObjectType.CAR: cars.append(obj)
+            if obj.y > GameSettings.SCREEN_HEIGHT: self.obstacles.remove(obj)
         for i in range(len(cars)):
             for j in range(i+1,len(cars)):
                 if cars[i].get_rect().colliderect(cars[j].get_rect()):
                     midx = (cars[i].x+cars[j].x)//2 + cars[i].width//2
                     midy = (cars[i].y+cars[j].y)//2 + cars[i].height//2
                     self.crashes.append(CrashEffect(midx, midy))
-
         for coin in self.coins[:]:
             coin.update()
-            if coin.y > GameSettings.SCREEN_HEIGHT:
-                self.coins.remove(coin)
-
-        # очищаем старые эффекты
+            if coin.y > GameSettings.SCREEN_HEIGHT: self.coins.remove(coin)
         self.crashes = [c for c in self.crashes if c.draw(self.screen)]
 
     def check_collisions(self):
         player_rect = pygame.Rect(self.player_x, self.player_y, 24, 16)
-        # столкновения с препятствиями
         for obj in self.obstacles:
-            if player_rect.colliderect(obj.get_rect()):
-                self.game_active = False
-        # сбор монет
+            if player_rect.colliderect(obj.get_rect()): self.game_active = False
         for coin in self.coins[:]:
             if player_rect.colliderect(coin.get_rect()):
                 self.coins.remove(coin)
                 self.score += 1
-                if self.score % 10 == 0:
-                    self.level += 1
+                if self.score % 10 == 0: self.level += 1
 
     def handle_input(self):
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]  and self.player_x > 0:
-            self.player_x -= GameSettings.PLAYER_SPEED
-        if keys[pygame.K_RIGHT] and self.player_x < GameSettings.SCREEN_WIDTH-24:
-            self.player_x += GameSettings.PLAYER_SPEED
+        if keys[pygame.K_LEFT]  and self.player_x > 0: self.player_x -= GameSettings.PLAYER_SPEED
+        if keys[pygame.K_RIGHT] and self.player_x < GameSettings.SCREEN_WIDTH-24: self.player_x += GameSettings.PLAYER_SPEED
 
     def draw(self):
-        # фон
-        self.screen.fill(Colors.GRASS_GREEN)
-        # дорога
-        for y in range(-GameSettings.TILE_SIZE, GameSettings.SCREEN_HEIGHT, GameSettings.TILE_SIZE):
-            PixelArt.draw_road(self.screen, (y+self.road_offset)%GameSettings.SCREEN_HEIGHT)
-        # объекты
+        self.screen.fill(Colors.SKY_BLUE)
+        PixelArt.draw_shore(self.screen)
+        PixelArt.draw_perspective_road(self.screen)
+        H, W = GameSettings.SCREEN_HEIGHT, GameSettings.SCREEN_WIDTH
+        left_edge  = W/2 - (W*0.8)/2
+        right_edge = W/2 + (W*0.8)/2
+        for px in range(50, int(left_edge), 150): PixelArt.draw_palm(self.screen, px, H-140)
+        for px in range(int(right_edge)+50, W, 150): PixelArt.draw_palm(self.screen, px, H-140)
         for obj in self.obstacles: obj.draw(self.screen)
         for coin in self.coins:       coin.draw(self.screen)
-        # игрок
         PixelArt.draw_cat(self.screen, self.player_x, self.player_y)
-        # UI
         self.screen.blit(self.font.render(f"Score: {self.score}",True,Colors.WHITE),(10,10))
         self.screen.blit(self.font.render(f"Level: {self.level}",True,Colors.WHITE),(10,30))
-        # крэш-эффекты
         for crash in self.crashes: crash.draw(self.screen)
-        # Game Over
         if not self.game_active:
             over = pygame.font.SysFont("Arial",32).render("Game Over! Press R to restart",True,Colors.RED)
-            self.screen.blit(over,((GameSettings.SCREEN_WIDTH-over.get_width())//2,
-                                   GameSettings.SCREEN_HEIGHT//2))
+            self.screen.blit(over,((GameSettings.SCREEN_WIDTH-over.get_width())//2,GameSettings.SCREEN_HEIGHT//2))
 
     def run(self):
         while True:
             for e in pygame.event.get():
-                if e.type == pygame.QUIT:
-                    pygame.quit(); sys.exit()
-                if e.type == pygame.KEYDOWN and not self.game_active and e.key==pygame.K_r:
-                    self.reset_game()
-
+                if e.type == pygame.QUIT: pygame.quit(); sys.exit()
+                if e.type == pygame.KEYDOWN and not self.game_active and e.key==pygame.K_r: self.reset_game()
             if self.game_active:
                 self.road_offset = (self.road_offset + GameSettings.SCROLL_SPEED) % GameSettings.TILE_SIZE
                 self.generate_environment()
                 self.update_objects()
                 self.check_collisions()
                 self.handle_input()
-
             self.draw()
             pygame.display.flip()
             self.clock.tick(GameSettings.FPS)
 
-# ====================== ЗАПУСК ======================
 if __name__ == "__main__":
     Game().run()
