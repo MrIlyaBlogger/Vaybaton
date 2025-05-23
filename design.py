@@ -27,6 +27,5 @@ class Colors:
 class ObjectType(Enum):
     CAR = 1
     TREE = 2
-    BUSH = 3
-    LAMP = 4
-    COIN = 5
+    HOUSE = 3
+    COIN = 4
